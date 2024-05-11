@@ -62,6 +62,18 @@ public:
 	void away();
 	void Dbezier();
 	void continuity();
+
+	int a[4][3];
+	int c[4][2];
+	int z[4][3];
+	int N[3];
+	int h[3][3];
+
+	int a1[8][3];
+	int c1[8][2];
+	int h1[8][3];
+
+
 // 操作
 public:
 
@@ -137,6 +149,21 @@ public:
 	afx_msg void Clean();
 	afx_msg void BezierLine();
 	afx_msg void BezierSurface();
+
+	afx_msg void threeDraw();
+	void matrix(double b[4][4], double m);
+	void perspect(double then, double fine, double d, double r);
+	void acclu(int v[3]);
+	void vision(double then, double fine, double r, int v[3]);
+	void xiaoyin(double then, double fine, double r);
+	afx_msg void onDrawPsm();
+	afx_msg void onDrawPsx();
+	void juzheng1(double b[4][4]);
+	void EQUT();
+	void color(int i, int j);
+	void fill(double m[2][2], int n[4]);
+	void fill2(double m[2][2], int n[4]);
+	afx_msg void OnDrawRpg();
 };
 
 #ifndef _DEBUG  // cgTest1View.cpp 中的调试版本

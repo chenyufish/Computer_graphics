@@ -9,6 +9,10 @@
 #include "cgTest1.h"
 #endif
 
+#include <afxwin.h>
+#include <gdiplus.h>
+using namespace Gdiplus;
+
 #include "cgTest1Doc.h"
 #include "cgTest1View.h"
 #ifdef _DEBUG
@@ -64,6 +68,10 @@ BEGIN_MESSAGE_MAP(CcgTest1View, CView)
 	ON_COMMAND(ID_32821, &CcgTest1View::Clean)
 	ON_COMMAND(ID_32822, &CcgTest1View::BezierLine)
 	ON_COMMAND(ID_32823, &CcgTest1View::BezierSurface)
+	ON_COMMAND(ID_32824, &CcgTest1View::threeDraw)
+	ON_COMMAND(ID_32825, &CcgTest1View::onDrawPsm)
+	ON_COMMAND(ID_32826, &CcgTest1View::onDrawPsx)
+	ON_COMMAND(ID_RPG_RPG32827, &CcgTest1View::OnDrawRpg)
 END_MESSAGE_MAP()
 
 // CcgTest1View 构造/析构
@@ -765,54 +773,7 @@ void CcgTest1View::symxny()
 }
 
 
-//void CcgTest1View::OnTriangle1()
-//{
-//	CDC* pDC = GetWindowDC();
-//	double angle = M_PI / 2; // 90度对应的弧度
-//	for (int i = 0; i < points.size(); i++)
-//	{
-//		int x = points[i].x - cx;
-//		int y = points[i].y - cy;
-//		points[i].x = cos(angle) * x - sin(angle) * y + cx;
-//		points[i].y = sin(angle) * x + cos(angle) * y + cy;
-//	}
-//	for (int i = 0; i < points.size(); i++)
-//	{
-//		int t;
-//		if (i < points.size() - 1)
-//			t = i + 1;
-//		else
-//			t = 0;
-//		pDC->MoveTo(points[i]);
-//		pDC->LineTo(points[t]);
-//	}
-//	// TODO: 在此添加命令处理程序代码
-//}
 
-
-//void CcgTest1View::OnTriangle2()
-//{
-//	CDC* pDC = GetWindowDC();
-//	double angle = M_PI / 2; // 90度对应的弧度
-//	for (int i = 0; i < points.size(); i++)
-//	{
-//		int x = points[i].x - cx;
-//		int y = points[i].y - cy;
-//		points[i].x = cos(angle) * x - sin(angle) * y + cx;
-//		points[i].y = sin(angle) * x + cos(angle) * y + cy;
-//	}
-//	for (int i = 0; i < points.size(); i++)
-//	{
-//		int t;
-//		if (i < points.size() - 1)
-//			t = i + 1;
-//		else
-//			t = 0;
-//		pDC->MoveTo(points[i]);
-//		pDC->LineTo(points[t]);
-//	}
-//	// TODO: 在此添加命令处理程序代码
-//}
 
 
 
@@ -1410,5 +1371,423 @@ void CcgTest1View::BezierSurface()
 	FGetv();
 	Fcontinuity();
 
+	// TODO: 在此添加命令处理程序代码
+}
+
+
+
+
+
+
+void DrawCubicBezierCurve(Graphics& graphics, const Point& startPoint, const Point& endPoint,
+	const Point& controlPoint1, const Point& controlPoint2)
+{
+	Pen pen(Color(255, 0, 0, 255)); // 定义红色画笔
+
+	// 绘制三次贝塞尔曲线
+	graphics.DrawBezier(&pen, startPoint.X, startPoint.Y,
+		controlPoint1.X, controlPoint1.Y,
+		controlPoint2.X, controlPoint2.Y,
+		endPoint.X, endPoint.Y);
+}
+
+
+
+void CcgTest1View::threeDraw()
+{
+
+	GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR gdiplusToken;
+	GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+	CDC* pDC = GetWindowDC();
+	Graphics graphics(pDC->m_hDC);
+
+	// 定义曲线的端点和控制点
+	Point startPoint(100, 100);
+	Point endPoint(300, 300);
+	Point controlPoint1(150, 50);
+	Point controlPoint2(250, 250);
+
+	// 绘制三次贝塞尔曲线
+	DrawCubicBezierCurve(graphics, startPoint, endPoint, controlPoint1, controlPoint2);
+	// TODO: 在此添加命令处理程序代码
+
+}
+
+
+
+
+
+
+
+//计算矩阵乘
+void CcgTest1View::matrix(double b[4][4]/*旋转变换矩阵*/, double m)
+{
+	int d[4][4];//把点变成齐次的
+	for (int i = 0; i < 4; i++) {
+		d[i][0] = a[i][0];
+		d[i][1] = a[i][1];
+		d[i][2] = a[i][2];
+		d[i][3] = 1;
+	}
+	//与透视投影整体变换矩阵相乘
+	for (int i = 0; i < 4; i++) {
+		double s2 = 0;
+		//使得二维点的齐次最后一个为1
+		s2 = d[i][0] * b[0][3] + d[i][1] * b[1][3] + d[i][2] * b[2][3] + d[i][3] * b[3][3];
+		z[i][2] = s2 * m;
+		for (int j = 0; j < 2; j++) {
+			double s = 0;
+			s = d[i][0] * b[0][j] + d[i][1] * b[1][j] + d[i][2] * b[2][j] + d[i][3] * b[3][j];
+			c[i][j] = s / s2;
+			z[i][j] = s;
+			s = 0;
+		}
+		s2 = 0;
+	}
+}
+
+//透视投影
+void CcgTest1View::perspect(double then, double fine, double d, double r)
+{
+	//角度转变
+	then = then * 3.1415926;
+	fine = fine * 3.1415926;
+	//首先构造变换矩阵
+	double k1, k2, k3, k4, k5, k6, k7, k8;
+	k1 = sin(then), k2 = sin(fine), k3 = cos(then), k4 = cos(fine), k5 = k2 * k3, k6 = k1 * k2, k7 = k3 * k4, k8 = k4 * k1;
+	double b[4][4];
+	b[0][0] = k3, b[0][1] = -k8, b[0][2] = 0, b[0][3] = -k6 / d;
+	b[1][0] = 0, b[1][1] = k2, b[1][2] = 0, b[1][3] = -k4 / d;
+	b[2][0] = -k1, b[2][1] = -k7, b[2][2] = 0, b[2][3] = -k5 / d;
+	b[3][0] = 0, b[3][1] = 0, b[3][2] = 0, b[3][3] = r / d;
+	matrix(b, d);
+	//移到中心
+	for (int i = 0; i < 4; i++) {
+		c[i][0] += 250;
+		c[i][1] = 300 - c[i][1];
+	}
+	//画出透视投影
+	CDC* pDC = GetDC();
+	pDC->MoveTo(c[0][0], c[0][1]);
+	pDC->LineTo(c[1][0], c[1][1]);
+	pDC->LineTo(c[3][0], c[3][1]);//到顶点的
+	pDC->MoveTo(c[1][0], c[1][1]);
+	pDC->LineTo(c[2][0], c[2][1]);
+	pDC->LineTo(c[3][0], c[3][1]);//到顶点的
+	pDC->MoveTo(c[2][0], c[2][1]);
+	pDC->LineTo(c[0][0], c[0][1]);
+	pDC->LineTo(c[3][0], c[3][1]);//到顶点的
+	pDC->MoveTo(c[0][0], c[0][1]);
+	ReleaseDC(pDC);
+}
+
+
+
+
+
+//从这里开始就直接使用隐线算法，上面是透视投影
+// 
+//
+//计算外矢量 
+void CcgTest1View::acclu(int v[3]/*三个点*/)
+{
+	//以第一个点为参考点
+	int x[3], y[3];
+	for (int i = 0; i < 3; i++) {
+		x[i] = z[v[1]][i] - z[v[0]][i];
+		y[i] = z[v[2]][i] - z[v[0]][i];
+	}
+	N[0] = x[1] * y[2] - x[2] * y[1];
+	N[1] = x[2] * y[0] - x[0] * y[2];
+	N[2] = x[0] * y[1] - x[1] * y[0];
+}
+
+
+//判断是否可视
+void CcgTest1View::vision(double then, double fine, double r, int v[3])
+{
+	//视矢量
+	double s[3];
+	s[0] = r * sin(fine * 3.1415926) * sin(then * 3.1415926) - z[v[0]][0];
+	s[1] = r * cos(fine * 3.1415926) - z[v[0]][1];
+	s[2] = r * sin(fine * 3.1415926) * cos(then * 3.1415926) - z[v[0]][2];
+	acclu(v);
+	double jug = 0;
+	for (int i = 0; i < 3; i++) {
+		jug += s[i] * N[i];
+	}
+	if (jug > 0) {
+		h[v[0]][v[1]] = h[v[1]][v[0]] = 1;
+		h[v[0]][v[2]] = h[v[2]][v[0]] = 1;
+		h[v[2]][v[1]] = h[v[1]][v[2]] = 1;
+	}
+	else if (jug == 0) {
+		h[v[2]][v[1]] = h[v[1]][v[2]] = 1;
+	}
+}
+
+
+//计算边表
+void CcgTest1View::xiaoyin(double then, double fine, double r/*视径*/)
+{
+	//其实边表是一个对称矩阵，在连边时只需要看下三角
+	//先进行边表初始化
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			h[i][j] = 0;
+		}
+	}
+	//第一个面
+	int v[3];
+	v[0] = 1, v[1] = 3, v[2] = 2;
+	vision(then, fine, r, v);
+	//第二个面
+	v[0] = 0, v[1] = 3, v[2] = 1;
+	vision(then, fine, r, v);
+	//第三个面
+	v[0] = 0, v[1] = 2, v[2] = 3;
+	vision(then, fine, r, v);
+	//第四个面
+	v[0] = 0, v[1] = 1, v[2] = 2;
+	vision(then, fine, r, v);
+}
+
+
+
+
+void CcgTest1View::onDrawPsm()
+{
+	/*在这里定义三棱锥的四个顶点*/
+	for (int i = 0; i < 3; i++) {
+		a[i][2] = 100;
+	}
+	a[3][2] = 600;
+	a[0][0] = 100, a[1][0] = 100, a[2][0] = 400, a[3][0] = 100;
+	a[0][1] = 100, a[1][1] = 400, a[2][1] = 200, a[3][1] = 300;
+	//输入参数
+	double str1, str2, str3, str4;
+	/*str1 = 0.25;
+	str2 = 0.25;
+	str3 = 60;
+	str4 = 120;*/
+	str1 = 0.25;
+	str2 = 0.5;
+	str3 = 30;
+	str4 = 60;
+	perspect(str1, str2,str3,str4);
+	xiaoyin(str1,str2, str4);
+	// TODO: 在此添加控件通知处理程序代码
+	// TODO: 在此添加命令处理程序代码
+}
+
+
+void CcgTest1View::onDrawPsx()
+{
+	//移动
+	for (int i = 0; i < 4; i++) {
+		c[i][0] += 300;
+	}
+	CDC* pDC = GetDC();
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j <= i - 1; j++) {
+			if (h[i][j] == 1) {
+				pDC->MoveTo(c[i][0], c[i][1]);
+				pDC->LineTo(c[j][0], c[j][1]);
+			}
+		}
+	}
+	ReleaseDC(pDC);
+	// TODO: 在此添加控件通知处理程序代码
+	// TODO: 在此添加命令处理程序代码
+}
+
+
+
+
+
+
+
+
+
+
+void CcgTest1View::juzheng1(double b[4][4])
+{
+	int d[8][4];
+	for (int i = 0; i < 8; i++) {
+		d[i][3] = 1;
+		d[i][0] = a1[i][0];
+		d[i][1] = a1[i][1];
+		d[i][2] = a1[i][2];
+	}
+	for (int i = 0; i < 8; i++) {
+		for (int j = 0; j < 2; j++) {
+			double s = 0;
+			s = d[i][0] * b[0][j] + d[i][1] * b[1][j] + d[i][2] * b[2][j] + d[i][3] * b[3][j];
+			c1[i][j] = s;
+			s = 0;
+		}
+	}
+}
+
+
+//等测投影
+void CcgTest1View::EQUT()
+{
+	double b[4][4];
+	b[0][0] = 1, b[0][1] = 0, b[0][2] = 0, b[0][3] = 0;
+	b[1][0] = 0, b[1][1] = 1, b[1][2] = 0, b[1][3] = 0;
+	b[2][0] = -cos(45), b[2][1] = -sin(45), b[2][2] = 0, b[2][3] = 0;
+	b[3][0] = 0, b[3][1] = 0, b[3][2] = 0, b[3][3] = 1;
+	//调用矩阵计算并直接将结果记录
+	juzheng1(b);
+}
+
+
+
+//对边进行进行光滑着色
+void CcgTest1View::color(int i, int j)
+{
+	CDC* pDC = GetDC();
+	if (i != j) {
+		double k;
+		if (c1[i][0] != c1[j][0])
+			k = (double)(c1[i][1] - c1[j][1]) / (c1[i][0] - c1[j][0]);
+		else
+			k = 999;
+		if (abs(k) > 1) {
+			double x = c1[i][1] < c1[j][1] ? c1[i][0] : c1[j][0];
+			for (double y = c1[i][1] < c1[j][1] ? c1[i][1] : c1[j][1]; y < max(c1[i][1], c1[j][1]); y++) {
+				double d1 = (double)(y - c1[j][1]) / (c1[i][1] - c1[j][1]), d2 = (double)(y - c1[i][1]) / (c1[j][1] - c1[i][1]);
+				if (k != 999) {
+					x += 1 / k;
+					pDC->SetPixel(x, y, RGB(255 * (h1[i][0] * d1 + h1[j][0] * d2), 255 * (h1[i][1] * d1 + h1[j][1] * d2), 255 * (h1[i][2] * d1 + h1[j][2] * d2)));
+				}
+				else {
+					pDC->SetPixel(c1[i][0], y, RGB(255 * (h1[i][0] * d1 + h1[j][0] * d2), 255 * (h1[i][1] * d1 + h1[j][1] * d2), 255 * (h1[i][2] * d1 + h1[j][2] * d2)));
+				}
+			}
+		}
+		else {
+			double y = c1[i][0] < c1[j][0] ? c1[i][1] : c1[j][1];
+			for (double x = c1[i][0] < c1[j][0] ? c1[i][0] : c1[j][0]; x < max(c1[i][0], c1[j][0]); x++) {
+				double d1 = (double)(x - c1[j][0]) / (c1[i][0] - c1[j][0]), d2 = (double)(x - c1[i][0]) / (c1[j][0] - c1[i][0]);
+				y += k;
+				pDC->SetPixel(x, y, RGB(255 * (h1[i][0] * d1 + h1[j][0] * d2), 255 * (h1[i][1] * d1 + h1[j][1] * d2), 255 * (h1[i][2] * d1 + h1[j][2] * d2)));
+			}
+		}
+	}
+	ReleaseDC(pDC);
+}
+
+//x主方向填充
+void CcgTest1View::fill(double m[2][2], int n[4])
+{
+	CDC* pDC = GetDC();
+	double l[2][3];
+	//求出各自的光强
+	for (int i = 0; i < 3; i++) {
+		l[0][i] = h1[n[0]][i] * ((double)(m[0][1] - c1[n[1]][1]) / (c1[n[0]][1] - c1[n[1]][1])) + h1[n[1]][i] * ((double)(m[0][1] - c1[n[0]][1]) / (c1[n[1]][1] - c1[n[0]][1]));
+	}
+	for (int i = 0; i < 3; i++) {
+		l[1][i] = h1[n[2]][i] * ((double)(m[1][1] - c1[n[3]][1]) / (c1[n[2]][1] - c1[n[3]][1])) + h1[n[3]][i] * ((double)(m[1][1] - c1[n[2]][1]) / (c1[n[3]][1] - c1[n[2]][1]));
+	}
+	for (int x = m[0][0] + 1; x < m[1][0]; x++) {
+		double d1 = (double)(x - m[1][0]) / (m[0][0] - m[1][0]), d2 = (double)(x - m[0][0]) / (m[1][0] - m[0][0]);
+		pDC->SetPixel(x, m[1][1], RGB(255 * (l[0][0] * d1 + l[1][0] * d2), 255 * (l[0][1] * d1 + l[1][1] * d2), 255 * (l[0][2] * d1 + l[1][2] * d2)));
+	}
+	ReleaseDC(pDC);
+}
+
+//y主方向填充
+void CcgTest1View::fill2(double m[2][2], int n[4])
+{
+	CDC* pDC = GetDC();
+	double l[2][3];
+	//求出各自的光强
+	for (int i = 0; i < 3; i++) {
+		l[0][i] = h1[n[0]][i] * ((double)(m[0][1] - c1[n[1]][1]) / (c1[n[0]][1] - c1[n[1]][1])) + h1[n[1]][i] * ((double)(m[0][1] - c1[n[0]][1]) / (c1[n[1]][1] - c1[n[0]][1]));
+	}
+	for (int i = 0; i < 3; i++) {
+		l[1][i] = h1[n[2]][i] * ((double)(m[1][1] - c1[n[3]][1]) / (c1[n[2]][1] - c1[n[3]][1])) + h1[n[3]][i] * ((double)(m[1][1] - c1[n[2]][1]) / (c1[n[3]][1] - c1[n[2]][1]));
+	}
+	for (int y = m[0][1] + 1; y < m[1][1]; y++) {
+		double d1 = (double)(y - m[1][1]) / (m[0][1] - m[1][1]), d2 = (double)(y - m[0][1]) / (m[1][1] - m[0][1]);
+		pDC->SetPixel(m[1][0], y, RGB(255 * (l[0][0] * d1 + l[1][0] * d2), 255 * (l[0][1] * d1 + l[1][1] * d2), 255 * (l[0][2] * d1 + l[1][2] * d2)));
+	}
+	ReleaseDC(pDC);
+}
+
+
+void CcgTest1View::OnDrawRpg()
+{
+	//初始化点
+	a1[0][0] = a1[0][1] = a1[0][2] = 200;
+	a1[1][0] = 200, a1[1][1] = 400, a1[1][2] = 200;
+	a1[2][0] = 200, a1[2][1] = 400, a1[2][2] = 400;
+	a1[3][0] = 200, a1[3][1] = 200, a1[3][2] = 400;
+	a1[4][0] = 400, a1[4][1] = 200, a1[4][2] = 200;
+	a1[5][0] = 400, a1[5][1] = 400, a1[5][2] = 200;
+	a1[6][0] = 400, a1[6][1] = 400, a1[6][2] = 400;
+	a1[7][0] = 400, a1[7][1] = 200, a1[7][2] = 400;
+	//
+	EQUT();
+	CDC* pDC = GetDC();
+
+	//对投影进行坐标变换
+	for (int i = 0; i < 8; i++) {
+		c1[i][0] += 300;
+		c1[i][1] = 350 - c1[i][1];
+	}
+	//设置点的光强（h1[8][3]在头文件定义了）
+	h1[0][0] = 0, h1[0][1] = 0, h1[0][2] = 0;
+	h1[4][0] = 1, h1[4][1] = 0, h1[4][2] = 0;
+	h1[5][0] = 1, h1[5][1] = 1, h1[5][2] = 0;
+	h1[1][0] = 0, h1[1][1] = 1, h1[1][2] = 0;
+	h1[3][0] = 0, h1[3][1] = 0, h1[3][2] = 1;
+	h1[7][0] = 1, h1[7][1] = 0, h1[7][2] = 1;
+	h1[6][0] = 1, h1[6][1] = 1, h1[6][2] = 1;
+	h1[2][0] = 0, h1[2][1] = 1, h1[2][2] = 1;
+	//
+	//首先对边进行光滑着色
+	color(5, 4);
+	color(5, 1);
+	color(7, 3);
+	color(7, 6);
+	color(6, 2);
+	color(2, 3);
+	color(1, 2);
+	color(5, 6);
+	color(4, 7);
+	//
+	//扫面线进行填充
+	double m[2][2];
+	//前面
+	int n[4];
+	n[0] = 2, n[1] = 3, n[2] = 6, n[3] = 7;
+	for (int i = min(c1[2][1], c1[3][1]) + 1; i < max(c1[2][1], c1[3][1]); i++) {
+		m[0][0] = c1[2][0], m[1][0] = c1[6][0];
+		m[0][1] = m[1][1] = i;
+		fill(m, n);
+	}
+	//上面
+	n[0] = 1, n[1] = 2, n[2] = 5, n[3] = 6;
+	double k = (double)(c1[1][1] - c1[2][1]) / (c1[1][0] - c1[2][0]);
+	m[0][0] = c1[1][0], m[1][0] = c1[5][0];
+	for (int i = min(c1[2][1], c1[1][1]) + 1; i < max(c1[2][1], c1[1][1]); i++) {
+		m[0][1] = m[1][1] = i;
+		m[0][0] += 1 / k, m[1][0] += 1 / k;
+		fill(m, n);
+	}
+	//侧面
+	n[0] = 6, n[1] = 5, n[2] = 7, n[3] = 4;
+	k = (double)(c1[5][1] - c1[6][1]) / (c1[5][0] - c1[6][0]);
+	m[0][1] = c1[6][1], m[1][1] = c1[7][1];
+	for (int i = min(c1[6][0], c1[5][0]) + 1; i < max(c1[6][0], c1[5][0]); i++) {
+		m[0][1] += k, m[1][1] += k;
+		m[0][0] = m[1][0] = i;
+		fill2(m, n);
+	}
+	// 	
 	// TODO: 在此添加命令处理程序代码
 }

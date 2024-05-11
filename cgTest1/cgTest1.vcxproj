@@ -98,6 +98,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />
+    <None Include="cpp.hint" />
     <None Include="ReadMe.txt" />
     <None Include="res\cgTest1.ico" />
     <None Include="res\cgTest1.rc2" />
