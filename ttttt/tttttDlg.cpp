@@ -457,6 +457,8 @@ void CtttttDlg::Project(double p[3])
 void CtttttDlg::fillup()
 {
 	CDC* pDC = GetDC();
+	int lightX = 500;
+	int lightY = 0;
 	//下面开始使用线性表实现有效边表填充
 	/*
 	* 将边表中的信息分别用不同的数组存储
@@ -499,6 +501,7 @@ void CtttttDlg::fillup()
 	Y_min = min(Y_min, Point[2][1]);
 	Y_max = max(Point[0][1], Point[1][1]);
 	Y_max = max(Y_max, Point[2][1]);
+	COLORREF shadowColor = RGB(100, 100, 100); // 阴影颜色为灰色，您可以根据需要调整
 	//开始扫描
 	for (double i = Y_min; i <= Y_max; i++) {
 		double ax[3]; int acount = 0;//保存交点的x值
@@ -509,6 +512,7 @@ void CtttttDlg::fillup()
 				lo2[acount++] = lo[j];
 				x_min[j] += kk[j];
 			}
+
 		}
 		//对交点的x进行排序
 		double t;
@@ -531,14 +535,23 @@ void CtttttDlg::fillup()
 			}
 		}
 
+	
 		//求出扫描线上的点的光强并设置颜色
 		double If[3];//扫描线上的点的光强
 		for (int j = 0; j < acount - 1; j += 2)
 			for (double k = ax[j]; k <= ax[j + 1]; k++) {
-				for (int jj = 0; jj < 3; jj++) {
-					If[jj] = (double)Id[j][jj] * ((k - ax[j + 1]) / (ax[j] - ax[j + 1])) + Id[j + 1][jj] * ((k - ax[j]) / (ax[j + 1] - ax[j]));
+				// 检查当前像素是否在光源背后
+				if (lightX < ax[j] && lightY < i) {
+					// 如果在光源背后，则将当前像素颜色设置为阴影颜色
+					pDC->SetPixel(k + 400, 300 - i, shadowColor);
 				}
-				pDC->SetPixel(k + 400, 300 - i, RGB(If[0] * 255, If[1] * 255, If[2] * 255));
+				else {
+					// 否则，根据光照计算当前像素颜色
+					for (int jj = 0; jj < 3; jj++) {
+						If[jj] = (double)Id[j][jj] * ((k - ax[j + 1]) / (ax[j] - ax[j + 1])) + Id[j + 1][jj] * ((k - ax[j]) / (ax[j + 1] - ax[j]));
+					}
+					pDC->SetPixel(k + 400, 300 - i, RGB(If[0] * 255, If[1] * 255, If[2] * 255));
+				}
 			}
 		acount = 0;
 	}

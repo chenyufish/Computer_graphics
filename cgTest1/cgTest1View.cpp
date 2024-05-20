@@ -59,6 +59,7 @@ BEGIN_MESSAGE_MAP(CcgTest1View, CView)
 	ON_COMMAND(ID_32809, &CcgTest1View::OnTriangleP1)
 	ON_COMMAND(ID_32810, &CcgTest1View::OnTriangleP2)
 	ON_COMMAND(ID_32811, &CcgTest1View::OnTriangleP3)
+
 	ON_COMMAND(ID_32814, &CcgTest1View::Oblique)
 	ON_COMMAND(ID_32815, &CcgTest1View::RotationY)
 	ON_COMMAND(ID_32817, &CcgTest1View::HorizontalCut)
@@ -66,6 +67,7 @@ BEGIN_MESSAGE_MAP(CcgTest1View, CView)
 	ON_COMMAND(ID_32819, &CcgTest1View::Draw)
 	ON_COMMAND(ID_32820, &CcgTest1View::SetPoint)
 	ON_COMMAND(ID_32821, &CcgTest1View::Clean)
+
 	ON_COMMAND(ID_32822, &CcgTest1View::BezierLine)
 	ON_COMMAND(ID_32823, &CcgTest1View::BezierSurface)
 	ON_COMMAND(ID_32824, &CcgTest1View::threeDraw)
@@ -174,16 +176,20 @@ CcgTest1Doc* CcgTest1View::GetDocument() const // 非调试版本是内联的
 // CcgTest1View 消息处理程序
 
 
+
+//多边形的绘画和填充
+//绘制多边形
 void CcgTest1View::OnPolygon()
 {
 	finish = false;
 	points.clear();
 	type = DrawPolygon;
 }
+//填充多边形
 void CcgTest1View::OnFillpolygon()
 {
 	CDC *pDC = GetWindowDC();
-	double y = 0.5;//saomiaoxian
+	double y = 0.5;//扫描算法
 	for (; y < 1000; y++)
 	{
 		vector<int> c;
@@ -212,6 +218,7 @@ void CcgTest1View::OnFillpolygon()
 
 }
 
+//绘图的鼠标左键
 void CcgTest1View::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	CDC *pDC = GetWindowDC();
@@ -272,6 +279,8 @@ void CcgTest1View::OnLButtonDown(UINT nFlags, CPoint point)
 	CView::OnLButtonDown(nFlags, point);
 }
 
+
+//绘图 的鼠标右键
 void CcgTest1View::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	CDC *pDC = GetWindowDC();
@@ -307,7 +316,7 @@ void CcgTest1View::OnRButtonDown(UINT nFlags, CPoint point)
 	CView::OnRButtonDown(nFlags, point);
 }
 
-
+//鼠标右键点击响应
 void CcgTest1View::drawLineMid(CPoint p1, CPoint p2)
 {
 	CDC *pDC = GetWindowDC();
@@ -390,6 +399,13 @@ void CcgTest1View::OnChangeDc()
 	pDC->LineTo(-100, 100);
 }
 
+
+
+
+
+//直线线段裁剪
+
+//画直线
 void CcgTest1View::OnDrawline()
 {
 	finish = false;
@@ -397,12 +413,15 @@ void CcgTest1View::OnDrawline()
 	lines.clear();
 }
 
+
+//画矩形
 void CcgTest1View::OnDrawrect()
 {
 	finish = false;
 	type = DrawRect;
 }
 
+//裁剪
 void CcgTest1View::OnClipping()
 {
 	type = STOP;
@@ -475,12 +494,17 @@ void CcgTest1View::OnClipping()
 	pDC->SelectObject(pOldPen);
 }
 
+
+//直线线段裁剪
+
+
+//构建坐标系
 void CcgTest1View::buildCoordinate()
 {
 	type = BuildCoordinate;
 	RedrawWindow();
 }
-
+//取点绘制多边形
 void CcgTest1View::drawPol()
 {
 	finish = false;
@@ -488,11 +512,13 @@ void CcgTest1View::drawPol()
 	points.clear();
 }
 
+
+//平移
 void CcgTest1View::moveUp()
 {
 	CDC *pDC = GetWindowDC();
 	for (int i = 0; i < points.size(); i++)
-		points[i].y -= 10;
+		points[i].y -= 50;
 	for (int i = 0; i < points.size(); i++)
 	{
 		int t;
@@ -509,7 +535,7 @@ void CcgTest1View::moveDown()
 {
 	CDC *pDC = GetWindowDC();
 	for (int i = 0; i < points.size(); i++)
-		points[i].y += 10;
+		points[i].y += 50;
 	for (int i = 0; i < points.size(); i++)
 	{
 		int t;
@@ -526,7 +552,7 @@ void CcgTest1View::moveLeft()
 {
 	CDC *pDC = GetWindowDC();
 	for (int i = 0; i < points.size(); i++)
-		points[i].x -= 10;
+		points[i].x -= 50;
 	for (int i = 0; i < points.size(); i++)
 	{
 		int t;
@@ -543,7 +569,7 @@ void CcgTest1View::moveRight()
 {
 	CDC *pDC = GetWindowDC();
 	for (int i = 0; i < points.size(); i++)
-		points[i].x += 10;
+		points[i].x += 50;
 	for (int i = 0; i < points.size(); i++)
 	{
 		int t;
@@ -555,8 +581,13 @@ void CcgTest1View::moveRight()
 		pDC->LineTo(points[t]);
 	}
 }
+//平移
 
 
+
+
+//图形变换部分
+//对称部分
 void CcgTest1View::symx()
 {
 	CDC *pDC = GetWindowDC();
@@ -590,8 +621,6 @@ void CcgTest1View::symy()
 		pDC->LineTo(points[t]);
 	}
 }
-
-
 void CcgTest1View::symo()
 {
 	CDC *pDC = GetWindowDC();
@@ -611,7 +640,6 @@ void CcgTest1View::symo()
 		pDC->LineTo(points[t]);
 	}
 }
-
 
 void CcgTest1View::symxy()
 {
@@ -634,6 +662,34 @@ void CcgTest1View::symxy()
 	}
 }
 
+void CcgTest1View::symxny()
+{
+	CDC* pDC = GetWindowDC();
+	for (int i = 0; i < points.size(); i++)
+	{
+		int temp = points[i].x;
+		points[i].x = cx - cy + points[i].y;
+		points[i].y = -cx + cy + temp;
+	}
+	for (int i = 0; i < points.size(); i++)
+	{
+		int t;
+		if (i < points.size() - 1)
+			t = i + 1;
+		else
+			t = 0;
+		pDC->MoveTo(points[i]);
+		pDC->LineTo(points[t]);
+	}
+}
+
+//对称部分
+
+
+
+//旋转
+
+//坐标原点旋转
 void CcgTest1View::protate()
 {
 	CDC* pDC = GetWindowDC();
@@ -656,9 +712,6 @@ void CcgTest1View::protate()
 		pDC->LineTo(points[t]);
 	}
 }
-
-
-
 void CcgTest1View::nrotate()
 {
 	CDC *pDC = GetWindowDC();
@@ -681,7 +734,11 @@ void CcgTest1View::nrotate()
 	}
 }
 
+//坐标原点旋转
 
+
+
+//缩小
 void CcgTest1View::smaller()
 {
 	CDC *pDC = GetWindowDC();
@@ -704,7 +761,7 @@ void CcgTest1View::smaller()
 	}
 }
 
-
+//放大
 void CcgTest1View::larger()
 {
 	CDC *pDC = GetWindowDC();
@@ -751,32 +808,7 @@ void CcgTest1View::OnTimer(UINT_PTR nIDEvent)
 }
 
 
-void CcgTest1View::symxny()
-{
-	CDC *pDC = GetWindowDC();
-	for (int i = 0; i < points.size(); i++)
-	{
-		int temp = points[i].x;
-		points[i].x = cx - cy + points[i].y;
-		points[i].y = -cx + cy + temp;
-	}
-	for (int i = 0; i < points.size(); i++)
-	{ 
-		int t;
-		if (i < points.size() - 1)
-			t = i + 1;
-		else
-			t = 0;
-		pDC->MoveTo(points[i]);
-		pDC->LineTo(points[t]);
-	}
-}
-
-
-
-
-
-
+//基于三角形（多边形）顶点的旋转
 void CcgTest1View::OnTriangleP1()
 {
 		CDC* pDC = GetWindowDC();
@@ -804,7 +836,7 @@ void CcgTest1View::OnTriangleP1()
 	// TODO: 在此添加命令处理程序代码	
 }
 
-
+//顺时针
 void CcgTest1View::rotateTriangle(double angle) {
 	// 计算旋转角度对应的弧度
 	double radians = angle * M_PI / 2;
@@ -857,12 +889,14 @@ void CcgTest1View::OnTriangleP3()
 }
 
 
+//错切变化
+//水平错切
 
 void CcgTest1View::HorizontalCut()
 {
 	CDC* pDC = GetWindowDC();
-	double shx = 0.5;
-	for (int j = 0; j < points.size();j++) {
+	double shx = 0.5; // 水平错切系数
+	for (int j = 0; j < points.size(); j++) {
 		// 计算变换后的 x 坐标
 		double newX = points[j].x + shx * points[j].y;
 		points[j].x = newX;
@@ -884,9 +918,9 @@ void CcgTest1View::HorizontalCut()
 void CcgTest1View::VerticalCut()
 {
 	CDC* pDC = GetWindowDC();
-	double shy = 0.5;
+	double shy = 0.5; // 垂直错切系数
 	for (int j = 0; j < points.size(); j++) {
-		// 计算变换后的 x 坐标
+		// 计算变换后的 y 坐标
 		double newY = points[j].y + shy * points[j].x;
 		points[j].y = newY;
 	}
@@ -905,6 +939,9 @@ void CcgTest1View::VerticalCut()
 
 
 
+
+
+
 void CcgTest1View::Oblique()
 {
 	// TODO: 在此添加命令处理程序代码
@@ -916,9 +953,7 @@ void CcgTest1View::RotationY()
 	// TODO: 在此添加命令处理程序代码
 }
 
-
-
-
+//绘图（填充）
 void CcgTest1View::Draw()
 {
 	type = BuildCoordinate;
@@ -926,7 +961,7 @@ void CcgTest1View::Draw()
 	// TODO: 在此添加命令处理程序代码
 }
 
-
+//取点
 void CcgTest1View::SetPoint()
 {
 	finish = false;
@@ -935,7 +970,7 @@ void CcgTest1View::SetPoint()
 	// TODO: 在此添加命令处理程序代码
 }
 
-
+//清屏
 void CcgTest1View::Clean()
 {
 	// 获取客户区域的设备上下文
@@ -955,7 +990,7 @@ void CcgTest1View::Clean()
 }
 
 
-
+//曲线计算
 
 void CcgTest1View::SetBezierPoint()
 {
@@ -1121,6 +1156,7 @@ void CcgTest1View::away()
 
 	ReleaseDC(pDC);
 }
+
 
 void CcgTest1View::Dbezier()
 {
@@ -1375,10 +1411,6 @@ void CcgTest1View::BezierSurface()
 }
 
 
-
-
-
-
 void DrawCubicBezierCurve(Graphics& graphics, const Point& startPoint, const Point& endPoint,
 	const Point& controlPoint1, const Point& controlPoint2)
 {
@@ -1390,7 +1422,6 @@ void DrawCubicBezierCurve(Graphics& graphics, const Point& startPoint, const Poi
 		controlPoint2.X, controlPoint2.Y,
 		endPoint.X, endPoint.Y);
 }
-
 
 
 void CcgTest1View::threeDraw()
@@ -1414,12 +1445,12 @@ void CcgTest1View::threeDraw()
 
 }
 
+//贝塞尔曲线部分
 
 
 
-
-
-
+//建模与消隐
+//透视锥形
 //计算矩阵乘
 void CcgTest1View::matrix(double b[4][4]/*旋转变换矩阵*/, double m)
 {
@@ -1602,14 +1633,7 @@ void CcgTest1View::onDrawPsx()
 	// TODO: 在此添加命令处理程序代码
 }
 
-
-
-
-
-
-
-
-
+//彩色rpg长方体
 
 void CcgTest1View::juzheng1(double b[4][4])
 {
@@ -1642,7 +1666,6 @@ void CcgTest1View::EQUT()
 	//调用矩阵计算并直接将结果记录
 	juzheng1(b);
 }
-
 
 
 //对边进行进行光滑着色
